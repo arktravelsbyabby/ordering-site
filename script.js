@@ -1,24 +1,12 @@
-/* Ordering prototype v4 – Google Sheets live integration
-   - Date must be at least 2 days from today
-   - Global daily total limit enforced via Google Sheets
-   - Each dish has its own daily limit enforced via Google Sheets
-   - Uses EmailJS for notifications
-*/
+/* Ordering prototype v3 – updated for live Web App */
 
 // ----------------- Configuration -----------------
-const soldOutDates = ["2025-10-30", "2025-11-01"]; 
+const soldOutDates = ["2025-10-30", "2025-11-01"]; // manual override
 const DAILY_GLOBAL_LIMIT = 20;
 
-const EMAILJS_SERVICE_ID = "service_s3wa5uh";
-const EMAILJS_TEMPLATE_ID = "template_loeevn8";
-const EMAILJS_PUBLIC_KEY = "WiUVr4jNMTM5mLk2F";
-const BUSINESS_EMAIL = "arktravelsbyabby@gmail.com";
-const SMS_GATEWAY = "3464908604@vtext.com"; 
-
-// Your deployed Google Sheets Web App URL
+// Your deployed Google Apps Script Web App URL
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzc08qe9vnMM5x0kUSHpWIdL-ooxXdfW2NXPGGFTzrJuNJlJWVaJ6pQ29L8emuIPrTk/exec";
 
-// ----------------- Dishes -----------------
 const DISHES = [
   { id: "biriyani", name: "Dindugal Chicken Biriyani", price: 14, desc: "Tamil Nadu style Biriyani with seeraga samba rice. Served with Onion Raita.", limit: 5 },
   { id: "idly", name: "Idly and Sambhar (4 nos)", price: 12, desc: "Fluffy white idly - 4 nos and Sambhar", limit: 5 },
@@ -31,13 +19,11 @@ const DISHES = [
 ];
 
 // ----------------- Helpers -----------------
-function todayPlusDays(n){
-  const d = new Date();
-  d.setDate(d.getDate() + n);
-  return d.toISOString().slice(0,10);
-}
+function todayPlusDays(n){ const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0,10); }
+function getStoredCounts(date){ const key = "orders_" + date; const raw = localStorage.getItem(key); if(!raw){ const init = { total:0, perDish:{} }; DISHES.forEach(d=> init.perDish[d.id]=0); return init; } return JSON.parse(raw); }
+function setStoredCounts(date, counts){ const key = "orders_" + date; localStorage.setItem(key, JSON.stringify(counts)); }
 
-// ----------------- UI Elements -----------------
+// ----------------- UI -----------------
 const orderDateInput = document.getElementById("orderDate");
 const dateMessage = document.getElementById("dateMessage");
 const menuList = document.getElementById("menuList");
@@ -46,28 +32,27 @@ const cartSummary = document.getElementById("cartSummary");
 const orderForm = document.getElementById("orderForm");
 
 let selectedDate = null;
-let cart = {}; 
+let cart = {}; // dishId -> qty
 
 // init
 orderDateInput.min = todayPlusDays(2);
 orderDateInput.value = todayPlusDays(2);
 renderMenu();
 handleDateChange();
-if(window.emailjs && EMAILJS_PUBLIC_KEY) emailjs.init(EMAILJS_PUBLIC_KEY);
 
-// ----------------- Render Menu -----------------
+// render menu
 function renderMenu(){
   menuList.innerHTML = "";
   DISHES.forEach(dish=>{
     const wrapper = document.createElement("div");
     wrapper.className = "item";
     wrapper.innerHTML = `
-      <div style="display:flex; gap:15px; align-items:flex-start;">
+      <div class="item-content" style="display:flex; gap:15px; align-items:flex-start;">
         <div class="item-info">
           <h4>${dish.name} — $${dish.price}</h4>
           <p>${dish.desc}</p>
           <p class="muted">Daily limit: ${dish.limit}</p>
-          <div class="qty-controls">
+          <div class="qty-controls" style="display:flex; align-items:center; gap:5px; margin-top:5px;">
             <button data-action="dec" data-id="${dish.id}">−</button>
             <input type="number" min="0" value="0" data-id="${dish.id}" style="width:50px;" />
             <button data-action="inc" data-id="${dish.id}">+</button>
@@ -77,118 +62,107 @@ function renderMenu(){
     `;
     menuList.appendChild(wrapper);
 
-    // buttons
+    // wire buttons
     wrapper.querySelectorAll("button").forEach(btn=>{
       btn.addEventListener("click", ()=>{
         const id = btn.dataset.id;
         const action = btn.dataset.action;
         const input = wrapper.querySelector('input[data-id="'+id+'"]');
         let val = parseInt(input.value||"0",10);
-        val = action==="inc" ? val+1 : Math.max(0,val-1);
+        if (action==="inc") val++; else val = Math.max(0,val-1);
         input.value = val;
         updateCartItem(id,val);
       });
     });
 
-    // input
-    wrapper.querySelector('input[type="number"]').addEventListener("input",(e)=>{
+    wrapper.querySelector('input[type="number"]').addEventListener("input", (e)=>{
       const id = e.target.dataset.id;
       let v = parseInt(e.target.value||"0",10);
-      if(isNaN(v)||v<0)v=0;
-      e.target.value=v;
+      if (isNaN(v)||v<0) v=0;
+      e.target.value = v;
       updateCartItem(id,v);
     });
   });
+
+  refreshCountsUI();
   renderCart();
 }
 
-function updateCartItem(id,qty){
-  cart[id]=qty;
-  renderCart();
-}
+function updateCartItem(id, qty){ cart[id]=qty; renderCart(); refreshCountsUI(); }
 
 function renderCart(){
-  const lines=[]; let total=0;
-  for(const id in cart){
-    const qty=cart[id];
-    if(qty>0){
-      const dish=DISHES.find(d=>d.id===id);
-      lines.push(`<div>${dish.name} × ${qty} — $${(dish.price*qty).toFixed(2)}</div>`);
-      total += dish.price*qty;
-    }
-  }
+  const lines = []; let total=0;
+  for(const id in cart){ const qty = cart[id]; if(qty>0){ const dish = DISHES.find(d=>d.id===id); lines.push(`<div>${dish.name} × ${qty} — $${(dish.price*qty).toFixed(2)}</div>`); total += dish.price*qty; } }
   cartSummary.innerHTML = lines.length? lines.join("") + `<hr/><strong>Total: $${total.toFixed(2)}</strong>` : `<p class="muted">No items selected</p>`;
 }
 
-// ----------------- Date Handling -----------------
 orderDateInput.addEventListener("change", handleDateChange);
 function handleDateChange(){
-  const val=orderDateInput.value;
-  selectedDate=val;
-  const minAllowed=todayPlusDays(2);
-  if(!val || val<minAllowed){ dateMessage.textContent="2 day notice required."; disableMenu(true); return; }
-  if(soldOutDates.includes(val)){ dateMessage.textContent="This day is SOLD OUT."; disableMenu(true); return; }
-  dateMessage.textContent="";
+  const val = orderDateInput.value;
+  selectedDate = val;
+  const minAllowed = todayPlusDays(2);
+  if (!val || val < minAllowed){ dateMessage.textContent = "2 day notice needed"; disableMenu(true); return; }
+  if (soldOutDates.includes(val)){ dateMessage.textContent = "SOLD OUT"; disableMenu(true); return; }
+  const counts = getStoredCounts(val);
+  if (counts.total >= DAILY_GLOBAL_LIMIT){ dateMessage.textContent = "Daily capacity reached"; disableMenu(true); return; }
+  dateMessage.textContent = "";
   disableMenu(false);
+  refreshCountsUI();
 }
 
-function disableMenu(dis){
-  document.querySelectorAll('#menuList input, #menuList button').forEach(el=>el.disabled=dis);
-  if(dis){ cart={}; document.querySelectorAll('#menuList input').forEach(i=>i.value=0); renderCart(); }
+function disableMenu(dis){ document.querySelectorAll('#menuList input, #menuList button').forEach(el=> el.disabled = dis); if(dis){ cart={}; document.querySelectorAll('#menuList input').forEach(i=> i.value=0); renderCart(); } }
+
+function refreshCountsUI(){
+  if (!selectedDate) return;
+  const counts = getStoredCounts(selectedDate);
+  overallMessage.textContent = `Daily total ordered for ${selectedDate}: ${counts.total} / ${DAILY_GLOBAL_LIMIT}`;
+  DISHES.forEach(dish=>{
+    const input = document.querySelector('input[data-id="'+dish.id+'"]');
+    const incBtn = document.querySelector('button[data-action="inc"][data-id="'+dish.id+'"]');
+    const remainingForDish = dish.limit - counts.perDish[dish.id];
+    const remainingGlobal = DAILY_GLOBAL_LIMIT - counts.total;
+    const allowed = Math.max(0, Math.min(remainingForDish, remainingGlobal));
+    if(input){ input.max = parseInt(input.value||"0",10) + allowed; }
+    if(incBtn) incBtn.disabled = allowed<=0;
+  });
 }
 
 // ----------------- Submit Order -----------------
 orderForm.addEventListener("submit", async function(e){
   e.preventDefault();
-  if(!selectedDate){ alert("Please select a valid date."); return; }
+  if (!selectedDate){ alert("Please select a valid date."); return; }
 
-  const items=[];
-  let totalQty=0;
-  for(const id in cart){
-    const qty=parseInt(cart[id]||0,10);
-    if(qty>0){
-      const dish=DISHES.find(d=>d.id===id);
-      items.push({id:dish.id,name:dish.name,qty,price:dish.price,subtotal:dish.price*qty});
-      totalQty += qty;
-    }
-  }
-  if(items.length===0){ alert("Select at least one item."); return; }
+  const items = []; let totalQty=0;
+  for(const id in cart){ const qty=parseInt(cart[id]||0,10); if(qty>0){ const dish = DISHES.find(d=>d.id===id); items.push({id:dish.id, name:dish.name, qty, price:dish.price, subtotal:dish.price*qty}); totalQty+=qty; } }
+  if(items.length===0){ alert("Choose at least one item"); return; }
 
-  // POST to Google Sheets Web App
+  const counts = getStoredCounts(selectedDate);
+  if(counts.total + totalQty > DAILY_GLOBAL_LIMIT){ alert("Exceeds daily global limit"); return; }
+  for(const it of items){ if(counts.perDish[it.id] + it.qty > DISHES.find(d=>d.id===it.id).limit){ alert(`${it.name} limit exceeded`); return; } }
+
+  // Update localStorage
+  counts.total += totalQty;
+  items.forEach(it => counts.perDish[it.id] += it.qty);
+  setStoredCounts(selectedDate, counts);
+  refreshCountsUI();
+
+  // send to Google Sheets Web App
   try{
-    const response=await fetch(WEB_APP_URL,{
-      method:"POST",
-      mode:"cors",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ date:selectedDate, cart: Object.fromEntries(items.map(i=>[i.id,i.qty])) })
+    const response = await fetch(WEB_APP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: selectedDate, cart })
     });
-    const data=await response.json();
-    if(!data.success){ alert("❌ "+data.message); return; }
-
-    // Send notifications via EmailJS
-    if(window.emailjs){
-      const messageLines=[
-        `New order from website`,
-        `Date: ${selectedDate}`,
-        ...items.map(i=>`${i.name} × ${i.qty} — $${i.subtotal.toFixed(2)}`),
-        `Total: $${items.reduce((s,i)=>s+i.subtotal,0)}`
-      ];
-      const message=messageLines.join("\n");
-      await emailjs.send(EMAILJS_SERVICE_ID,EMAILJS_TEMPLATE_ID,{message,email:BUSINESS_EMAIL},EMAILJS_PUBLIC_KEY);
-      await emailjs.send(EMAILJS_SERVICE_ID,EMAILJS_TEMPLATE_ID,{message,email:SMS_GATEWAY},EMAILJS_PUBLIC_KEY);
-      alert("✅ Order submitted successfully! Emails and SMS sent.");
-    }else{ alert("⚠️ EmailJS not loaded. Order saved on Google Sheets only."); }
-
-    // Reset form
-    cart={};
-    document.querySelectorAll('#menuList input').forEach(inp=>inp.value=0);
-    renderCart();
-    orderForm.reset();
-    orderDateInput.value=selectedDate;
-    handleDateChange();
-
-  }catch(err){
-    console.error("Order submission failed:",err);
-    alert("❌ Failed to submit order. Check console for details.");
+    const result = await response.json();
+    if(result.success) alert("✅ Order submitted successfully!");
+    else alert("❌ Order failed: " + result.message);
+  } catch(err){
+    console.error("Order submission failed:", err);
+    alert("❌ Order submission failed. Check console.");
   }
+
+  // reset form
+  cart = {};
+  document.querySelectorAll('#menuList input').forEach(inp=> inp.value=0);
+  renderCart();
 });
