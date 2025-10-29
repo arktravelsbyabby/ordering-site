@@ -1,0 +1,162 @@
+/* === BASE === */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: "Poppins", system-ui, sans-serif;
+  color: #fff;
+  overflow-x: hidden;
+}
+
+/* === BACKGROUND IMAGE === */
+body {
+  background: url("background.png") no-repeat center center fixed;
+  background-size: cover;
+  position: relative;
+}
+
+/* === OPTIONAL OVERLAY FOR READABILITY === */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3); /* slightly dark overlay for contrast */
+  z-index: 0;
+}
+
+/* === MAIN CONTAINER === */
+main, header, footer, section {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* === HEADER === */
+header.hero {
+  text-align: center;
+  padding: 60px 20px 20px;
+}
+
+header.hero h1 {
+  font-size: clamp(28px, 6vw, 56px);
+  text-transform: uppercase;
+  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.7);
+}
+
+.subtitle {
+  font-weight: 500;
+  color: #f0f0f0;
+  text-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* === SECTION BLOCKS === */
+section {
+  margin-bottom: 20px;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.35); /* translucent dark background for readability */
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+}
+
+/* === MENU ITEMS === */
+#menuList .item {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 12px 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.item h4 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  color: #fff;
+}
+
+.item p {
+  margin: 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* === QUANTITY CONTROLS === */
+.qty-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.qty-controls button {
+  background: rgba(255, 255, 255, 0.3);
+  border: none;
+  color: #fff;
+  font-weight: bold;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+}
+
+.qty-controls button:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.qty-controls input {
+  width: 50px;
+  text-align: center;
+  padding: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border-radius: 6px;
+}
+
+/* === INPUTS AND SELECTS === */
+input, select, textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 15px;
+  margin-top: 8px;
+}
+
+input::placeholder, textarea::placeholder {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* === BUTTON === */
+#submitBtn {
+  width: 100%;
+  margin-top: 14px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  background: #1a73e8;
+  color: #fff;
+  font-size: 16px;
+}
+
+#submitBtn:hover {
+  opacity: 0.9;
+}
+
+/* === FOOTER === */
+footer {
+  text-align: center;
+  padding: 16px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+}

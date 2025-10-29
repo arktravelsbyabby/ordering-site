@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>ARK's VEETU SAAPADU — Order</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+</head>
+<body>
+  <div class="bg-overlay"></div>
+
+  <header class="hero">
+    <h1>ARK's VEETU SAAPADU</h1>
+    <p class="subtitle">A HOMECOOKED MEAL</p>
+  </header>
+
+  <main class="container">
+    <section class="choose-date">
+      <h2>Choose date</h2>
+      <input type="date" id="orderDate" />
+      <p id="dateMessage" class="muted"></p>
+    </section>
+
+    <section id="menu" >
+      <h2>Menu</h2>
+      <div id="menuList"></div>
+      <p id="overallMessage" class="muted"></p>
+      <div class="info">
+        <p>📍 Pickup: Texas heritage pkwy — 4–6 PM</p>
+        <p>💸 Payment: Zelle/Venmo (demo@zelle.com)</p>
+      </div>
+    </section>
+
+    <section class="order-form">
+      <h2>Place your order</h2>
+      <form id="orderForm">
+        <label>Name<br/><input type="text" id="custName" required /></label>
+        <label>Email<br/><input type="email" id="custEmail" required /></label>
+        <label>Phone<br/><input type="tel" id="custPhone" required /></label>
+
+        <div id="cartSummary" class="cart slim"></div>
+
+        <button type="submit" id="submitBtn">Submit Order</button>
+      </form>
+    </section>
+
+    <section class="notes">
+      <h3>Ordering Guidelines</h3>
+      <p class="muted">
+•Orders must be placed at least 2 days in advance.
+	•	50% payment is required for order confirmation. Please send via Zelle to demo@zelle.com.
+	•	Orders will be confirmed via email/text once payment is received.
+	•	Please take note of the pickup location and time, and kindly pick up your orders within the designated pickup window.
+	•	We sincerely appreciate your business and look forward to serving you!
+</p>
+    </section>
+  </main>
+
+  <footer>
+    <p>ARK's Veetu Saapadu — Orders sent to arktravelsbyabby@gmail.com</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
