@@ -10,7 +10,7 @@
 const soldOutDates = ["2025-10-30", "2025-11-01"]; // edit manually
 const DAILY_GLOBAL_LIMIT = 20; // still used for display only
 const BUSINESS_EMAIL = "arktravelsbyabby@gmail.com";
-const SMS_GATEWAY = "3464908604@vtext.comcast.net"; // Xfinity mobile email-to-sms
+const SMS_GATEWAY = "3464908604@vtext.com"; // Xfinity mobile email-to-sms
 
 // EmailJS credentials
 const EMAILJS_SERVICE_ID = "service_s3wa5uh";
